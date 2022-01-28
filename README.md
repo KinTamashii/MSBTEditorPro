@@ -29,6 +29,6 @@ Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
     python3.10 msbt_editor_pro.py
 
 
-##Requirements
+## Requirements
 
     Python 3.10
