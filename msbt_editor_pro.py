@@ -4,7 +4,10 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 from PIL import ImageTk, Image
 import sys, os
+import platform
 
+
+operating_system = platform.system()
 script_dir = os.path.dirname(sys.argv[0])
 resources_dir = script_dir+'/resources/'
 cache_file_dir = script_dir+"/cache/cache.txt"
@@ -17,7 +20,7 @@ class gui():
 
 
         self.window = tk.Tk()
-        self.window.title("Msbt Editor Pro v.0.10")
+        self.window.title("Msbt Editor Pro v0.10.1")
         self.window.configure(bg="#323232")
         self.window.minsize(width = 864, height = 550)
         self.window.geometry("864x550")
@@ -140,7 +143,7 @@ class gui():
 
     def open_file(self):
         if self.modified == True:
-            match ConfirmationPrompt(self.window, "Msbt Editor Pro v.0.10", "Would you like to save before opening another file?", ("Yes", "No", "Cancel"), 2).choice:
+            match ConfirmationPrompt(self.window, "Msbt Editor Pro v0.10.1", "Would you like to save before opening another file?", ("Yes", "No", "Cancel"), 2).choice:
                 case 0:
                     self.save()
                     self.open_msbt()
@@ -159,7 +162,7 @@ class gui():
                                 filetypes=[("MSBT Files", ".msbt")])
         if new_dir != '': # If the user didn't cancel, the directory will not be empty.
             self.msbt_dir = new_dir
-            self.window.title("Msbt Editor Pro v.0.10.0 - "+self.msbt_dir[self.msbt_dir.rindex("/")+1:])
+            self.window.title("Msbt Editor Pro v0.10.1 - "+self.msbt_dir[self.msbt_dir.rindex("/")+1:])
             # Save the last directory the user was in.
             cache_file = open(cache_file_dir, 'w')
             cache_file.write(self.msbt_dir[:self.msbt_dir.rindex("/")+1])
@@ -246,7 +249,7 @@ class gui():
 
     def remove_label(self):
         cur_index = self.labels_listbox.curselection()[0]
-        match ConfirmationPrompt(self.window, "Msbt Editor Pro v.0.10", f"Are you sure you want to delete \"{self.Labels_List[cur_index]}\"?", ("Yes", "No"), 1).choice:
+        match ConfirmationPrompt(self.window, "Msbt Editor Pro v0.10.1", f"Are you sure you want to delete \"{self.Labels_List[cur_index]}\"?", ("Yes", "No"), 1).choice:
             case 0:
                 for i in range(len(self.msbt.lbl1.Labels)):
                     if self.msbt.lbl1.Labels[i].name == self.Labels_List[cur_index]:
@@ -298,9 +301,16 @@ class gui():
             coded_export(self.msbt, csv_dir)
 
     def batch_coded_export(self): # Export all msbt files in a directory to csv with control codes.
-        msbt_folder_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder containing the msbt files:")
+        msg = "Please select a folder containing the msbt files:"
+        msbt_folder_dir = filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            message=msg
+            ) if operating_system == "Darwin" else filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            title=msg
+            )
 
         if msbt_folder_dir != '':
             # Save the last directory the user was in.
@@ -310,9 +320,16 @@ class gui():
 
             msbt_folder_dir += "/"
 
-            csv_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder to export the files to:")
+            msg = "Please select a folder to export the files to:"
+            csv_dir = filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                message=msg
+                ) if operating_system == "Darwin" else filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                title=msg
+                )
 
             if csv_dir != '':
                 # Save the last directory the user was in.
@@ -350,9 +367,17 @@ class gui():
             self.original_string_text['state'] = 'disabled'
 
     def batch_coded_import(self): # Import all csv files in a directory to msbt with control codes.
-        msbt_folder_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder containing the msbt files:")
+
+        msg = "Please select a folder containing the msbt files:"
+        msbt_folder_dir = filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            message=msg
+            ) if operating_system == "Darwin" else filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            title=msg
+            )
 
         if msbt_folder_dir != '':
             # Save the last directory the user was in.
@@ -361,10 +386,16 @@ class gui():
             cache_file.close()
 
             msbt_folder_dir += "/"
-
-            csv_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder containing the csv files:")
+            msg = "Please select a folder containing the csv files:"
+            csv_dir = filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                message=msg
+                ) if operating_system == "Darwin" else filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                title=msg
+                )
 
             if csv_dir != '':
                 # Save the last directory the user was in.
@@ -373,10 +404,16 @@ class gui():
                 cache_file.close()
 
                 csv_dir += "/"
-
-                save_dir = filedialog.askdirectory(parent=self.window,
-                                initialdir=get_initial_directory(cache_file_dir),
-                                message="Please select a folder to save the new msbt files to:")
+                msg = "Please select a folder to save the new msbt files to:"
+                save_dir = filedialog.askdirectory(
+                    parent=self.window,
+                    initialdir=get_initial_directory(cache_file_dir),
+                    message=msg
+                    ) if operating_system == "Darwin" else filedialog.askdirectory(
+                    parent=self.window,
+                    initialdir=get_initial_directory(cache_file_dir),
+                    title=msg
+                    )
 
                 if save_dir != '':
                     # Save the last directory the user was in.
@@ -389,21 +426,28 @@ class gui():
                     batch_coded_import(msbt_folder_dir, csv_dir, save_dir)
 
     def clean_export(self): # Export one msbt file to csv without codes.
-        csv_dir = filedialog.asksaveasfilename(parent=self.window,
+        txt_dir = filedialog.asksaveasfilename(parent=self.window,
                                         initialdir=get_initial_directory(cache_file_dir),
-                                        title="Please create a name for your csv file:",
-                                filetypes=[("Comma Seperated Value Files", ".csv")])
-        if csv_dir != '' and self.msbt != None:
+                                        title="Please create a name for your text file:",
+                                filetypes=[("Text Files", ".txt")])
+        if txt_dir != '' and self.msbt != None:
             # Save the last directory the user was in.
             cache_file = open(cache_file_dir, 'w')
-            cache_file.write(csv_dir[:csv_dir.rindex("/")+1])
+            cache_file.write(txt_dir[:txt_dir.rindex("/")+1])
             cache_file.close()
-            clean_export(self.msbt, csv_dir)
+            clean_export(self.msbt, txt_dir)
 
     def batch_clean_export(self): # Export all msbt files in a directory to csv without codes.
-        msbt_folder_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder containing the msbt files:")
+        msg = "Please select a folder containing the msbt files:"
+        msbt_folder_dir = filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            message=msg
+            ) if operating_system == "Darwin" else filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            title=msg
+            )
 
         if msbt_folder_dir != '':
             # Save the last directory the user was in.
@@ -413,31 +457,38 @@ class gui():
 
             msbt_folder_dir += "/"
 
-            csv_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder to export the files to:")
+            msg = "Please select a folder to export the files to:"
+            txt_dir = filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                message=msg
+                ) if operating_system == "Darwin" else filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                title=msg
+                )
 
-            if csv_dir != '':
+            if txt_dir != '':
                 # Save the last directory the user was in.
                 cache_file = open(cache_file_dir, 'w')
-                cache_file.write(csv_dir[:csv_dir.rindex("/")+1])
+                cache_file.write(txt_dir[:txt_dir.rindex("/")+1])
                 cache_file.close()
 
-                csv_dir += "/"
+                txt_dir += "/"
 
-                batch_clean_export(msbt_folder_dir, csv_dir)
+                batch_clean_export(msbt_folder_dir, txt_dir)
 
     def clean_import(self): # Automatically format strings with control codes in a csv while importing it to an msbt.
-        csv_dir = filedialog.askopenfilename(parent=self.window,
+        txt_dir = filedialog.askopenfilename(parent=self.window,
                                 initialdir=get_initial_directory(cache_file_dir),
-                                title="Please select a csv file with \"clean\" strings:",
-                                filetypes=[("Comma Seperated Value Files", ".csv")])
-        if csv_dir != '' and self.msbt != None:
+                                title="Please select a text file with \"clean\" strings:",
+                                filetypes=[("Text Files", ".txt")])
+        if txt_dir != '' and self.msbt != None:
             # Save the last directory the user was in.
             cache_file = open(cache_file_dir, 'w')
-            cache_file.write(csv_dir[:csv_dir.rindex("/")+1])
+            cache_file.write(txt_dir[:txt_dir.rindex("/")+1])
             cache_file.close()
-            clean_import(self.msbt, csv_dir, self.save_dir)
+            clean_import(self.msbt, txt_dir, self.save_dir)
             self.modified = False
             
             cur_index = self.labels_listbox.curselection()[0]
@@ -453,9 +504,16 @@ class gui():
             self.original_string_text['state'] = 'disabled'
 
     def batch_clean_import(self): # Automatically format strings with control codes in all csv in a directory while importing to msbt.
-        msbt_folder_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder containing the msbt files:")
+        msg = "Please select a folder containing the msbt files:"
+        msbt_folder_dir = filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            message=msg
+            ) if operating_system == "Darwin" else filedialog.askdirectory(
+            parent=self.window,
+            initialdir=get_initial_directory(cache_file_dir),
+            title=msg
+            )
 
         if msbt_folder_dir != '':
             cache_file = open(cache_file_dir, 'w')
@@ -463,22 +521,34 @@ class gui():
             cache_file.close()
 
             msbt_folder_dir += "/"
+            msg = "Please select a folder containing the \"clean\" text files:"
+            txt_dir = filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                message=msg
+                ) if operating_system == "Darwin" else filedialog.askdirectory(
+                parent=self.window,
+                initialdir=get_initial_directory(cache_file_dir),
+                title=msg
+                )
 
-            csv_dir = filedialog.askdirectory(parent=self.window,
-                            initialdir=get_initial_directory(cache_file_dir),
-                            message="Please select a folder containing the \"clean\" csv files:")
-
-            if csv_dir != '':
+            if txt_dir != '':
                 # Save the last directory the user was in.
                 cache_file = open(cache_file_dir, 'w')
-                cache_file.write(csv_dir[:csv_dir.rindex("/")+1])
+                cache_file.write(txt_dir[:txt_dir.rindex("/")+1])
                 cache_file.close()
 
-                csv_dir += "/"
-
-                save_dir = filedialog.askdirectory(parent=self.window,
-                                initialdir=get_initial_directory(cache_file_dir),
-                                message="Please select a folder to save the new msbt files to:")
+                txt_dir += "/"
+                msg = "Please select a folder to save the new msbt files to:"
+                save_dir = filedialog.askdirectory(
+                    parent=self.window,
+                    initialdir=get_initial_directory(cache_file_dir),
+                    message=msg
+                    ) if operating_system == "Darwin" else filedialog.askdirectory(
+                    parent=self.window,
+                    initialdir=get_initial_directory(cache_file_dir),
+                    title=msg
+                    )
 
                 if save_dir != '':
                     # Save the last directory the user was in.
@@ -488,7 +558,7 @@ class gui():
 
                     save_dir += "/"
 
-                    batch_clean_import(msbt_folder_dir, csv_dir, save_dir)
+                    batch_clean_import(msbt_folder_dir, txt_dir, save_dir)
 
 
 
