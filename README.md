@@ -8,7 +8,7 @@ Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
 
     Importing from CSV
     
-    Importing to and Exporting (via Auto Formatting) from clean /txt files.
+    Importing to and Exporting (via Auto Formatting) from clean .txt files.
     
     Batch Import/Export
     
