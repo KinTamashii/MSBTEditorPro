@@ -30,7 +30,7 @@ Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
     
    ## Clean Strings
    After exporting msbt to a "clean" .txt file, the first line will include a mode for the Auto Formatter to use when the file is imported again.
-   By default this is 0, which adds in PageBreaks and newlines calculated by approximate text width in addition to the original codes.
+   By default this is 0, which adds in PageBreaks and newlines (calculated by approximating the text width) in addition to the original codes.
    Mode 1 only adds the newlines and original codes.
    Mode 2 only adds the original codes.
    Mode 3 doesn't format the strings.
