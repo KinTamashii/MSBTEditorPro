@@ -4,7 +4,7 @@ IcySon55's Msbt Editor rewritten in python with extra features such as a readabl
 Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
 
 
-## New Features
+# New Features
 
     Importing from CSV
     
@@ -14,7 +14,7 @@ Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
     
     Readable Code Format
     
-## Code Format Examples
+# Code Format Examples
  
     0E00 0000 0000 0600 0200 0200 6830 → <Ruby="{2:2}と">
  
@@ -24,11 +24,11 @@ Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
     
     0E00 0800 0000 0200 0C00 → <unk[8:0:12]>
     
-## Usage
-   # Execute
+# Usage
+   ## Execute
     python3.10 msbt_editor_pro.py
     
-   # Clean Strings
+   ## Clean Strings
     After exporting msbt to a "clean" .txt file, the first line will include a mode for the Auto Formatter to use when the file is imported again.
     By default this is 0, which adds in PageBreaks and newlines calculated by approximate text width in addition to the original codes.
     Mode 1 only adds the newlines and original codes.
@@ -36,7 +36,7 @@ Original Editor: (https://github.com/IcySon55/3DLandMSBTeditor)
     Mode 3 doesn't format the strings.
 
 
-## Requirements
+# Requirements
 
     Python 3.10
     pillow
