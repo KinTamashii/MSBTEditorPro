@@ -8,13 +8,12 @@ import json
 script_dir = path.dirname(sys.argv[0])
 resources_dir = script_dir+'/resources/'
 font_width_data = json.load(open(resources_dir+"/font_width_data.json"))
-msbt_dir = "/Users/kin_tamashii/Downloads/m_menu.msbt"
-#print(font_width_data)
+
 
 Groups = {0: "System"}
 Tags = {"System": {0: "Ruby", 1: "Font", 2: "Size", 3: "Color", 4: "PageBreak"}}
 
-#unpack
+# Unpack the Groups and Tags for later use.
 Groups_Bytes = {}
 for group in Groups:
     Groups_Bytes[Groups[group]] = chr(group)
@@ -219,29 +218,37 @@ def clean_string_export(coded_string):
     while ind < string_len:
         match coded_string[ind]:
             case "<":
+                #previous_char =  coded_string[ind-1] 
+                #or previous_char not in [">"," "]
                 ind += 1
                 next_ind = coded_string.index(">", ind)
                 code = coded_string[ind:next_ind]
                 if code == "PageBreak":
+                    if clean_string[-1:] == " ":
+                        clean_string = clean_string[:-1]
                     Clean_Strings_List += (clean_string,)
                     clean_string = ""
-                elif code == "/br":
+                elif clean_string[-1:] not in (" ", ""):
                     clean_string += " "
                 ind = next_ind
             case "\\":
                 ind += 1
                 clean_string += coded_string[ind]
+            case "." | "?" | "!":
+                if clean_string[-1:] == " ":
+                    clean_string = clean_string[:-1]
+                clean_string += coded_string[ind]
             case _:
                 clean_string += coded_string[ind]
         ind += 1
+    if clean_string[-1:] == " ":
+        clean_string = clean_string[:-1]
     Clean_Strings_List += (clean_string,)
 
-
     return Clean_Strings_List
-
 #clean_string_export(coded_string_test)
 
-def auto_format_string(Clean_String_List, original_coded_string): # Automatically format a "clean" string with a coded original as reference.
+def auto_format_string_textbox(Clean_String_List, original_coded_string): # Automatically format a "clean" string with a coded original as reference.
     ind = 0
     org_string_len = len(original_coded_string)
     cur_width = 0
@@ -265,13 +272,14 @@ def auto_format_string(Clean_String_List, original_coded_string): # Automaticall
         else:
             cur_width += font_width_data[original_coded_string[ind]]
         ind += 1
+    
     Widths += (cur_width,)
     Max_Lines += (cur_lines,)
     
     max_width = max(Widths)
     max_lines = max(Max_Lines)
 
-    Original_Coded_Strings = original_coded_string.replace("</br>"," ").split("<PageBreak>")
+    Original_Coded_Strings = code_split(original_coded_string.replace("</br>"," "), "<PageBreak>")
     Result_List = []
     for string, clean_string in zip(Original_Coded_Strings, Clean_String_List):
         clean_string = clean_string.replace("\\","\\\\").replace("<","\\<")
@@ -297,8 +305,18 @@ def auto_format_string(Clean_String_List, original_coded_string): # Automaticall
                     cur_width = 0
                 else:
                     nind = closest_punctuation(clean_string, ind) # Try to split PageBreaks by sentence if possible.
-                    
+                    DNE = True
                     if nind != None:
+                        String_Codes_Len = len(String_Codes)
+                        code_ind = 0
+                        while code_ind < String_Codes_Len:
+                            if String_Codes[code_ind][1] > nind+1:
+                                String_Codes = String_Codes[:code_ind] + String_Codes[code_ind+1:]
+                                String_Codes_Len -= 1
+                            elif String_Codes[code_ind][1] == nind+1:
+                                DNE = False
+                            code_ind += 1
+                    if nind != None and DNE:
                         split_code = "<PageBreak>"
                         ind = nind
                     else:
@@ -307,14 +325,15 @@ def auto_format_string(Clean_String_List, original_coded_string): # Automaticall
                             if clean_string[ind] != " ":
                                 ind = clean_string.rindex(" ", last_ind, ind)
                     ind += 1
-                    if String_Codes[-1][1] == int(ind):
+                    
+                    if String_Codes != [] and String_Codes[-1][1] == int(ind):
                         String_Codes = String_Codes[:-1]
-                    String_Codes += ((split_code, int(ind)),)
+                    if (split_code, int(ind),) not in String_Codes:
+                        String_Codes += ((split_code, int(ind)),)
                     cur_lines = 0
                     last_ind = ind
                     cur_width = 0
             ind += 1
-
         last_ind = ind = 0
         while ind < string_len: # Approximate locations for remaining codes with relative position to length of string.
             while ind < string_len and string[ind] != "<":
@@ -334,9 +353,7 @@ def auto_format_string(Clean_String_List, original_coded_string): # Automaticall
                     if loc != 0:
                         loc = (loc + ind/string_len)/2*clean_string_len
                     String_Codes += [(cur_code, int(loc))]
-                    break
-            ind += 1          
-        
+                    break   
         
         cur_string = ""
         last_pos = 0
@@ -344,11 +361,11 @@ def auto_format_string(Clean_String_List, original_coded_string): # Automaticall
         break_occured = False
         for code_info in String_Codes: # Add codes to the string.
             code, pos = code_info
-            
             if clean_string_len > pos > 0 and code not in ['<PageBreak>', '</br>']:
                 if clean_string[pos] != ' ':
-                    pos = closest_index(clean_string[:pos], " ", pos)
-
+                    npos = closest_index(clean_string[:pos], " ", pos)
+                    if npos != None:
+                        pos = npos
             if clean_string[last_pos:pos] != '' and break_occured and clean_string[last_pos] == " ":
                 break_occured = False
                 last_pos += 1
@@ -362,12 +379,166 @@ def auto_format_string(Clean_String_List, original_coded_string): # Automaticall
                 break_occured = True
 
             cur_string += string_part + code
-
             last_pos = pos
-            
+        if clean_string[last_pos:] != '':
+            if break_occured and clean_string[last_pos] == " ":
+                break_occured = False
+                last_pos += 1
+            cur_string += clean_string[last_pos:]
         Result_List += (cur_string,)
     return '<PageBreak>'.join(Result_List)
 
+
+
+
+def auto_format_string_newline(Clean_String_List, original_coded_string): # Automatically format a "clean" string with a coded original as reference.
+    ind = 0
+    org_string_len = len(original_coded_string)
+    cur_width = 0
+    cur_lines = 0
+    Widths = []
+    while ind < org_string_len: # Calculate the max width per line and max lines per textbox using average character width data from 172 fonts.
+        if original_coded_string[ind] == "<":
+            ind += 1
+            next_ind = original_coded_string.index(">", ind)
+            if original_coded_string[ind:next_ind] in ['/br','PageBreak']:
+                Widths += (cur_width,)
+                cur_width = 0
+                cur_lines += 1
+            ind = next_ind
+        else:
+            cur_width += font_width_data[original_coded_string[ind]]
+        ind += 1
+    
+    Widths += (cur_width,)
+    
+    max_width = max(Widths)
+
+    Original_Coded_Strings = code_split(original_coded_string.replace("</br>"," "), "<PageBreak>")
+    Result_List = []
+    for string, clean_string in zip(Original_Coded_Strings, Clean_String_List):
+        clean_string = clean_string.replace("\\","\\\\").replace("<","\\<")
+        last_ind = ind = 0
+        string_len = len(string)
+        clean_string_len = len(clean_string)
+        String_Codes = []
+        cur_width = 0
+        cur_lines = 0
+        while ind < clean_string_len: # Positions for newline and pagebreak codes are calculated using the max width/lines and character width data.
+            if clean_string[ind] == "\\":
+                ind += 1
+            cur_width += font_width_data[clean_string[ind]]
+            if cur_width > max_width:
+                if " " in clean_string[last_ind:ind]:
+                    if clean_string[ind] != " ":
+                        ind = clean_string.rindex(" ", last_ind, ind)
+                    ind += 1
+                String_Codes += (("</br>", int(ind)),)
+                cur_lines += 1
+                last_ind = ind
+                cur_width = 0
+            ind += 1
+        last_ind = ind = 0
+        while ind < string_len: # Approximate locations for remaining codes with relative position to length of string.
+            while ind < string_len and string[ind] != "<":
+                ind += 1
+                last_ind = ind
+            while True:
+                if ind >= string_len:
+                    cur_code = string[last_ind:]
+                    if cur_code != '':
+                        String_Codes += [(cur_code, clean_string_len)]
+                    break
+                if string[ind] == "<":
+                    ind = string.index(">", ind)+1
+                else:
+                    cur_code = string[last_ind:ind]
+                    loc = last_ind/string_len
+                    if loc != 0:
+                        loc = (loc + ind/string_len)/2*clean_string_len
+                    String_Codes += [(cur_code, int(loc))]
+                    break   
+        
+        cur_string = ""
+        last_pos = 0
+        String_Codes.sort(key=lambda x: x[1])
+        break_occured = False
+        for code_info in String_Codes: # Add codes to the string.
+            code, pos = code_info
+            if clean_string_len > pos > 0 and code not in ['</br>']:
+                if clean_string[pos] != ' ':
+                    npos = closest_index(clean_string[:pos], " ", pos)
+                    if npos != None:
+                        pos = npos
+            if clean_string[last_pos:pos] != '' and break_occured and clean_string[last_pos] == " ":
+                break_occured = False
+                last_pos += 1
+
+            string_part = clean_string[last_pos:pos]
+
+            if code in ['</br>']:
+                if string_part != '':
+                    if string_part[-1] == " ":
+                        string_part = string_part[:-1]
+                break_occured = True
+
+            cur_string += string_part + code
+
+            last_pos = pos
+        if clean_string[last_pos:] != '':
+            if break_occured and clean_string[last_pos] == " ":
+                break_occured = False
+                last_pos += 1
+            cur_string += clean_string[last_pos:]
+        Result_List += (cur_string,)
+    return '<PageBreak>'.join(Result_List)
+
+
+
+
+
+def auto_format_string_code(Clean_String_List, original_coded_string): # Automatically format a "clean" string with a coded original as reference.
+
+    Original_Coded_Strings = code_split(original_coded_string.replace("</br>"," "), "<PageBreak>")
+    Result_List = []
+    for string, clean_string in zip(Original_Coded_Strings, Clean_String_List):
+        clean_string = clean_string.replace("\\","\\\\").replace("<","\\<")
+        last_ind = ind = 0
+        string_len = len(string)
+        clean_string_len = len(clean_string)
+        String_Codes = []
+        while ind < string_len: # Approximate locations for remaining codes with relative position to length of string.
+            while ind < string_len and string[ind] != "<":
+                ind += 1
+                last_ind = ind
+            while True:
+                if ind >= string_len:
+                    cur_code = string[last_ind:]
+                    if cur_code != '':
+                        String_Codes += [(cur_code, clean_string_len)]
+                    break
+                if string[ind] == "<":
+                    ind = string.index(">", ind)+1
+                else:
+                    cur_code = string[last_ind:ind]
+                    loc = last_ind/string_len
+                    if loc != 0:
+                        loc = (loc + ind/string_len)/2*clean_string_len
+                    String_Codes += [(cur_code, int(loc))]
+                    break   
+        
+        cur_string = ""
+        last_pos = 0
+        String_Codes.sort(key=lambda x: x[1])
+        for code_info in String_Codes: # Add codes to the string.
+            code, pos = code_info
+
+            cur_string += clean_string[last_pos:pos] + code
+
+            last_pos = pos
+        cur_string += clean_string[last_pos:]
+        Result_List += (cur_string,)
+    return '<PageBreak>'.join(Result_List)
 
 
 
@@ -768,7 +939,7 @@ def coded_export(msbt, csv_dir):
         Labels_List = [i for i in range(msbt.txt2.number_of_strings)]
     rows = zip_longest(["Label"]+Labels_List, ["String"]+msbt.txt2.Strings)
     with open(csv_dir, "w", encoding='utf-16') as f:
-        writer = csv.writer(f, delimiter='\t')
+        writer = csv.writer(f, delimiter='\t', lineterminator='\n')
         for row in rows:
             writer.writerow(row)
 
@@ -786,7 +957,7 @@ def coded_import(msbt, csv_dir, save_dir):
         Labels_List = [i.name for i in Label_List_Copy]
         New_Labels_List = []
         with open(csv_dir, 'r', encoding='utf-16') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='\t', lineterminator='\n')
             next(reader)
             for row in reader:
                 New_Labels_List += (row[0][:64],)
@@ -804,7 +975,7 @@ def coded_import(msbt, csv_dir, save_dir):
 
     else:
         with open(csv_dir, 'r', encoding='utf-16') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='\t', lineterminator='\n')
             next(reader)
             for row in reader:
                 Strings_List += (row[1],)
@@ -822,76 +993,67 @@ def batch_coded_import(msbt_folder_dir, csv_dir, save_dir):
             coded_import(msbt(msbt_file_dir), csv_dir+i, save_dir+base_file_name+".msbt")
 
 
-def clean_export(msbt, csv_dir):
-    if msbt.has_labels:
-        Label_List_Copy = msbt.lbl1.Labels.copy()
-        Label_List_Copy.sort(key=lambda x: x.Index)
-        Labels_List = [i.name for i in Label_List_Copy]
-    else:
-        Labels_List = [i for i in range(msbt.txt2.number_of_strings)]
-    rows = zip_longest(["Label"]+Labels_List, ["String"]+msbt.txt2.Strings)
-    with open(csv_dir, "w", encoding='utf-16') as f:
-        writer = csv.writer(f, delimiter='\t')
-        for row in rows:
-            writer.writerow([row[0]]+clean_string_export(row[1]))
+def clean_export(msbt, txt_dir):
+    #Nums = []
+    #num = 0
+    #for string in msbt.txt2.Strings:
+    #    num += code_count(string, "<PageBreak>")+1#, string.count("<PageBreak>")+1
+    #    Nums += [str(num)]
+    #print(Nums)
+    with open(txt_dir, "w", encoding='utf-16') as f:
 
-def batch_clean_export(msbt_folder_dir, csv_dir):
+        
+        f.write('{"Mode": 0}\n'+'\n'.join([sub_row for string_list in msbt.txt2.Strings for sub_row in clean_string_export(string_list)]))
+            #for  in :
+            #    f.write('\n'+sub_row)
+
+def batch_clean_export(msbt_folder_dir, txt_dir):
     for i in listdir(msbt_folder_dir):
         base_file_name = i[:-5]
         if i[-5:] == ".msbt":
-            clean_export(msbt(msbt_folder_dir+i), csv_dir+base_file_name+".csv")
+            clean_export(msbt(msbt_folder_dir+i), txt_dir+base_file_name+".txt")
 
 
 
-def clean_import(msbt, csv_dir, save_dir):
+def clean_import(msbt, txt_dir, save_dir):
     Strings_List = []
-    if msbt.has_labels:
-        Label_List_Copy = msbt.lbl1.Labels.copy()
-        Label_List_Copy.sort(key=lambda x: x.Index)
-        Labels_List = [i.name for i in Label_List_Copy]
-        New_Labels_List = []
-        with open(csv_dir, 'r', encoding='utf-16') as f:
-            reader = csv.reader(f, delimiter='\t')
-            next(reader)
-            for row, original_string in zip(reader, msbt.txt2.Strings):
-                New_Labels_List += (row[0][:64],)
-                Strings_List += (auto_format_string(row[1:], original_string),)
-        for i in range(len(Labels_List)):
-            new_label = New_Labels_List[i]
-            if new_label in Labels_List:
-                pass
-            else:
-                for j in range(len(msbt.lbl1.Labels)):
-                    if msbt.lbl1.Labels[j].name == Labels_List[i]:
-                        break
-                msbt.rename_label(msbt.lbl1.Labels[j], new_label)
-                Labels_List[i] = new_label
-
-    else:
-        with open(csv_dir, 'r', encoding='utf-16') as f:
-            reader = csv.reader(f, delimiter='\t')
-            next(reader)
-            for row in reader:
-                Strings_List += (row[1],)
+    f = open(txt_dir, 'r', encoding='utf-16').read().split('\n')
+    mode = json.loads(f[0])['Mode']
+    file_strings = f[1:]
+    Nums = []
+    num = 0
+    for string in msbt.txt2.Strings:
+        num += code_count(string, "<PageBreak>")+1#, string.count("<PageBreak>")+1
+        Nums += [num]
+    Strings_List = []
+    rind = 0
+    match mode:
+        case 0: # PageBreaks and newlines are added into the strings.
+            for i, org in zip(Nums, msbt.txt2.Strings):
+                Strings_List += (auto_format_string_textbox(file_strings[rind:i], org),)
+                rind = i
+        case 1: # Newlines are added into the strings.
+            for i, org in zip(Nums, msbt.txt2.Strings):
+                Strings_List += (auto_format_string_newline(file_strings[rind:i], org),)
+                rind = i
+        case 2: # Only codes in the original string are added.
+            for i, org in zip(Nums, msbt.txt2.Strings):
+                Strings_List += (auto_format_string_code(file_strings[rind:i], org),)
+                rind = i
+        case 3: # No codes are added.
+            Strings_List = file_strings
 
     msbt.txt2.Strings = Strings_List
 
     msbt.save(save_dir)
 
-def batch_clean_import(msbt_folder_dir, csv_dir, save_dir):
-    for i in listdir(csv_dir):
+def batch_clean_import(msbt_folder_dir, txt_dir, save_dir):
+    for i in listdir(txt_dir):
         base_file_name = i[:-4]
         msbt_file_dir = msbt_folder_dir+base_file_name+".msbt"
-        if i[-4:] == ".csv" and path.isfile(msbt_file_dir):
-            clean_import(msbt(msbt_file_dir), csv_dir+i, save_dir+base_file_name+".msbt")
+        if i[-4:] == ".txt" and path.isfile(msbt_file_dir):
+            clean_import(msbt(msbt_file_dir), txt_dir+i, save_dir+base_file_name+".msbt")
 
 
 class InvalidMsbtError(Exception):
     pass
-
-if __name__ == "__main__":
-    x = msbt(msbt_dir)
-    #print(x.header.file_encoding)
-    #clean_export(x, "eggs.csv")
-    #batch_coded_import("/Users/kin_tamashii/Downloads/msbt_parent_test/msbt_dir_test/", "/Users/kin_tamashii/Downloads/msbt_parent_test/msbt_dir_test_csv_dir/", "/Users/kin_tamashii/Downloads/msbt_parent_test/msbt_dir_test_save_dir/")
-    clean_import(x, "eggs.csv", "eggs 2.msbt")
