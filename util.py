@@ -124,3 +124,39 @@ def closest_punctuation(string, ind): # Find the closest punctuation after a giv
             ind -= 1
 
     return None # A complete iteration through the string without finding anything; return None.
+
+
+
+def code_count(string, sub):
+    string_len = len(string)
+    count = rind = ind = 0
+    while ind < string_len:
+        if string[ind] == "\\":
+            ind += 1
+        elif string[ind] == "<":
+            rind = ind
+            ind = string.index(">", ind)
+            if string[rind:ind+1] == sub:
+                count += 1
+        ind += 1
+    return count
+
+
+
+def code_split(string, sub):
+    List = []
+    string_len = len(string)
+    rind = ind = 0
+    while ind < string_len:
+        if string[ind] == "\\":
+            ind += 1
+        elif string[ind] == "<":
+            mind = ind
+            ind = string.index(">", ind)+1
+            if string[mind:ind] == sub:
+                List += (string[rind:mind],)
+                rind = ind
+        ind += 1
+    if rind < string_len:
+        List += (string[rind:],)
+    return List
