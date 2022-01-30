@@ -1041,7 +1041,7 @@ def clean_import(msbt, txt_dir, save_dir):
                 Strings_List += (auto_format_string_code(file_strings[rind:i], org),)
                 rind = i
         case 3: # No codes are added.
-            Strings_List = file_strings
+            Strings_List = [string+"</eos>" for string in file_strings]
 
     msbt.txt2.Strings = Strings_List
 
